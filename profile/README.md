@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/log-friends-logo.svg" alt="Log Friends logo" width="720">
+</p>
+
 # Log Friends
 
 **Languages:** [English](#english) | [한국어](#korean) | [日本語](#japanese) | [Deutsch](#deutsch) | [Português do Brasil](#portugues-do-brasil) | [中文](#中文)
