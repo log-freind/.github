@@ -1,6 +1,8 @@
 # Log Friends
 
-[English](#english) | [한국어](#korean)
+**Languages:** [English](#english) | [한국어](#korean)
+
+**Primary target stack:** Java / Kotlin, Spring Boot, PostgreSQL / TimescaleDB
 
 ## English
 
