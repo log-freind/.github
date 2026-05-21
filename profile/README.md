@@ -20,7 +20,7 @@ Spring Boot App + log-friends-sdk
   -> Dashboard / Log Catalog
 ```
 
-The first-phase goal is intentionally small: no Kafka, NATS, Spark, ClickHouse, or microservice split. Log Friends focuses on fewer operational components, making it a practical fit for small teams and Java/Spring-heavy environments such as Korea, Japan, Germany, US enterprise systems, India, China, Eastern Europe, and Brazil.
+The first-phase goal is intentionally small: Spring Boot apps send HTTP JSON batches directly to the Console, and the Console stores Raw Events and builds first-phase statistics with fewer operational components. That makes Log Friends a practical fit for small teams and Java/Spring-heavy environments such as Korea, Japan, Germany, US enterprise systems, India, China, Eastern Europe, and Brazil.
 
 ### Product Idea
 
@@ -125,7 +125,7 @@ Spring Boot App + log-friends-sdk
   -> Dashboard / Log Catalog
 ```
 
-1차 목표는 운영 구성 요소를 줄이는 것입니다. Kafka, NATS, Spark, ClickHouse, MSA 없이 Spring Boot 앱에서 Console로 직접 HTTP JSON batch를 보내고, 작은 팀도 Raw Event 저장과 기본 통계 흐름을 만들 수 있게 합니다.
+1차 목표는 운영 구성 요소를 줄이는 것입니다. Spring Boot 앱에서 Console로 직접 HTTP JSON batch를 보내고, 작은 팀도 Raw Event 저장과 기본 통계 흐름을 만들 수 있게 합니다.
 
 ### 제품 방향
 
@@ -232,7 +232,7 @@ Spring Boot App + log-friends-sdk
   -> Dashboard / Log Catalog
 ```
 
-第1フェーズの目標は、運用コンポーネントを増やさないことです。Kafka, NATS, Spark, ClickHouse, マイクロサービス分割なしで、Spring Boot アプリから Console に直接 HTTP JSON batch を送ります。
+第1フェーズの目標は、運用コンポーネントを増やさないことです。Spring Boot アプリから Console に直接 HTTP JSON batch を送り、Raw Event 保存と基本統計の流れを小さく始めます。
 
 ### Product Direction
 
@@ -284,7 +284,7 @@ Spring Boot App + log-friends-sdk
   -> Dashboard / Log Catalog
 ```
 
-Das Ziel der ersten Phase ist eine kleine Betriebsflaeche: kein Kafka, NATS, Spark, ClickHouse und keine Microservice-Aufteilung. Spring-Boot-Apps senden HTTP JSON batches direkt an die Console.
+Das Ziel der ersten Phase ist eine kleine Betriebsflaeche: Spring-Boot-Apps senden HTTP JSON batches direkt an die Console, damit Raw Events und erste Statistiken mit wenigen Betriebsbausteinen verfuegbar sind.
 
 ### Product Direction
 
@@ -336,7 +336,7 @@ Spring Boot App + log-friends-sdk
   -> Dashboard / Log Catalog
 ```
 
-O objetivo da primeira fase e reduzir componentes operacionais: sem Kafka, NATS, Spark, ClickHouse ou divisao em microservicos. A aplicacao Spring Boot envia HTTP JSON batches diretamente para a Console.
+O objetivo da primeira fase e reduzir componentes operacionais: a aplicacao Spring Boot envia HTTP JSON batches diretamente para a Console para armazenar Raw Events e iniciar estatisticas com poucos componentes.
 
 ### Product Direction
 
@@ -388,7 +388,7 @@ Spring Boot App + log-friends-sdk
   -> Dashboard / Log Catalog
 ```
 
-第一阶段目标是减少运维组件：不引入 Kafka, NATS, Spark, ClickHouse，也不拆成微服务。Spring Boot 应用直接向 Console 发送 HTTP JSON batch。
+第一阶段目标是减少运维组件：Spring Boot 应用直接向 Console 发送 HTTP JSON batch，用较少组件完成 Raw Event 存储和第一阶段统计流程。
 
 ### Product Direction
 
