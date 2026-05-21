@@ -189,7 +189,7 @@ PostgreSQL / TimescaleDB
 
 ```kotlin
 dependencies {
-    implementation("com.logfriends:log-friends-sdk:1.2.0")
+    implementation("com.logfriends:log-friends-sdk:1.3.0")
 }
 ```
 
