@@ -17,7 +17,8 @@ Spring Boot App + log-friends-sdk
   -> HTTP JSON batch POST /ingest
   -> log-friends-console
   -> PostgreSQL / TimescaleDB
-  -> Dashboard / Log Catalog
+  -> Console REST API
+  -> log-friends-console-web
 ```
 
 The first-phase goal is intentionally small: Spring Boot apps send HTTP JSON batches directly to the Console, and the Console stores Raw Events and builds first-phase statistics with fewer operational components. That makes Log Friends a practical fit for small teams and Java/Spring-heavy environments such as Korea, Japan, Germany, US enterprise systems, India, China, Eastern Europe, and Brazil.
@@ -51,7 +52,7 @@ Target Spring Boot App
 log-friends-console
   - Raw Event ingest
   - Agent / Worker management
-  - Log Catalog API + static UI
+  - Log Catalog API / Raw Events API
   - scheduler-based statistics
         |
         v
@@ -76,13 +77,14 @@ PostgreSQL / TimescaleDB
 |---|---|
 | [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Captures events inside Spring Boot apps and sends them to Console `/ingest` |
 | [log-friends-console](https://github.com/log-freind/log-friends-console) | Ingest, storage, Agent management, Log Catalog, statistics |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Example Spring Boot applications |
+| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Standalone Next.js frontend for Console APIs |
+| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Shopping mall demo app that generates realistic `LOG_EVENT` data |
 
 ### SDK Quick Start
 
 ```kotlin
 dependencies {
-    implementation("com.logfriends:log-friends-sdk:1.2.0")
+    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
 }
 ```
 
@@ -90,7 +92,7 @@ Required configuration:
 
 ```bash
 export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8082/ingest
+export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
 ```
 
 JVM attach option:
@@ -109,7 +111,7 @@ If required settings are missing, the SDK disables capture/transport without fai
 - Queue full or transport failure drops the batch and logs periodic warnings.
 - SDK does not auto-register LogSpec.
 - Console owns Raw Event storage and statistics generation.
-- Console first-phase UI is Spring Boot static HTML with lightweight JavaScript.
+- Console Web is separated into log-friends-console-web and consumes Console REST APIs.
 
 ---
 
@@ -122,7 +124,8 @@ Spring Boot App + log-friends-sdk
   -> HTTP JSON batch POST /ingest
   -> log-friends-console
   -> PostgreSQL / TimescaleDB
-  -> Dashboard / Log Catalog
+  -> Console REST API
+  -> log-friends-console-web
 ```
 
 1차 목표는 운영 구성 요소를 줄이는 것입니다. Spring Boot 앱에서 Console로 직접 HTTP JSON batch를 보내고, 작은 팀도 Raw Event 저장과 기본 통계 흐름을 만들 수 있게 합니다.
@@ -158,7 +161,7 @@ Target Spring Boot App
 log-friends-console
   - Raw Event ingest
   - Agent / Worker management
-  - Log Catalog API + static UI
+  - Log Catalog API / Raw Events API
   - scheduler-based statistics
         |
         v
@@ -183,13 +186,14 @@ PostgreSQL / TimescaleDB
 |---|---|
 | [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Spring Boot 앱 내부에서 이벤트를 캡처하고 Console `/ingest`로 전송 |
 | [log-friends-console](https://github.com/log-freind/log-friends-console) | 이벤트 수신, 저장, Agent 관리, Log Catalog, 통계 생성 |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | SDK/Console 연동 예제 앱 |
+| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Console API를 사용하는 독립 Next.js 프론트엔드 |
+| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | 쇼핑몰 흐름으로 실제 `LOG_EVENT` 데이터를 생성하는 예제 앱 |
 
 ### SDK Quick Start
 
 ```kotlin
 dependencies {
-    implementation("com.logfriends:log-friends-sdk:1.3.0")
+    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
 }
 ```
 
@@ -197,7 +201,7 @@ dependencies {
 
 ```bash
 export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8082/ingest
+export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
 ```
 
 JVM attach 옵션:
@@ -216,7 +220,7 @@ java -Djdk.attach.allowAttachSelf=true -jar your-app.jar
 - queue full 또는 전송 실패 시 batch는 drop하며, 주기적으로 warn을 남깁니다.
 - SDK는 LogSpec을 자동 등록하지 않습니다.
 - Console이 Raw Event 저장과 통계 생성을 담당합니다.
-- Console 1차 UI는 Spring Boot static HTML + 가벼운 JavaScript입니다.
+- Console Web은 log-friends-console-web으로 분리되어 Console REST API를 사용합니다.
 
 ---
 
@@ -229,7 +233,8 @@ Spring Boot App + log-friends-sdk
   -> HTTP JSON batch POST /ingest
   -> log-friends-console
   -> PostgreSQL / TimescaleDB
-  -> Dashboard / Log Catalog
+  -> Console REST API
+  -> log-friends-console-web
 ```
 
 第1フェーズの目標は、運用コンポーネントを増やさないことです。Spring Boot アプリから Console に直接 HTTP JSON batch を送り、Raw Event 保存と基本統計の流れを小さく始めます。
@@ -254,19 +259,20 @@ LogSpec + Recent Sample + Mismatch + Field Request
 |---|---|
 | [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Spring Boot アプリ内でイベントをキャプチャし、Console `/ingest` に送信 |
 | [log-friends-console](https://github.com/log-freind/log-friends-console) | ingest, storage, Agent management, Log Catalog, statistics |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | SDK / Console 連携サンプル |
+| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Standalone Next.js frontend for Console APIs |
+| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | 実際のショッピングモールフローで `LOG_EVENT` を生成するデモアプリ |
 
 ### SDK Quick Start
 
 ```kotlin
 dependencies {
-    implementation("com.logfriends:log-friends-sdk:1.2.0")
+    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
 }
 ```
 
 ```bash
 export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8082/ingest
+export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
 java -Djdk.attach.allowAttachSelf=true -jar your-app.jar
 ```
 
@@ -281,7 +287,8 @@ Spring Boot App + log-friends-sdk
   -> HTTP JSON batch POST /ingest
   -> log-friends-console
   -> PostgreSQL / TimescaleDB
-  -> Dashboard / Log Catalog
+  -> Console REST API
+  -> log-friends-console-web
 ```
 
 Das Ziel der ersten Phase ist eine kleine Betriebsflaeche: Spring-Boot-Apps senden HTTP JSON batches direkt an die Console, damit Raw Events und erste Statistiken mit wenigen Betriebsbausteinen verfuegbar sind.
@@ -306,19 +313,20 @@ LogSpec + Recent Sample + Mismatch + Field Request
 |---|---|
 | [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Captures events inside Spring Boot apps and sends them to Console `/ingest` |
 | [log-friends-console](https://github.com/log-freind/log-friends-console) | Ingest, storage, Agent management, Log Catalog, statistics |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Example Spring Boot applications |
+| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Standalone Next.js frontend for Console APIs |
+| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Shopping mall demo app that generates realistic `LOG_EVENT` data |
 
 ### SDK Quick Start
 
 ```kotlin
 dependencies {
-    implementation("com.logfriends:log-friends-sdk:1.2.0")
+    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
 }
 ```
 
 ```bash
 export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8082/ingest
+export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
 java -Djdk.attach.allowAttachSelf=true -jar your-app.jar
 ```
 
@@ -333,7 +341,8 @@ Spring Boot App + log-friends-sdk
   -> HTTP JSON batch POST /ingest
   -> log-friends-console
   -> PostgreSQL / TimescaleDB
-  -> Dashboard / Log Catalog
+  -> Console REST API
+  -> log-friends-console-web
 ```
 
 O objetivo da primeira fase e reduzir componentes operacionais: a aplicacao Spring Boot envia HTTP JSON batches diretamente para a Console para armazenar Raw Events e iniciar estatisticas com poucos componentes.
@@ -358,19 +367,20 @@ LogSpec + Recent Sample + Mismatch + Field Request
 |---|---|
 | [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Captures events inside Spring Boot apps and sends them to Console `/ingest` |
 | [log-friends-console](https://github.com/log-freind/log-friends-console) | Ingest, storage, Agent management, Log Catalog, statistics |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Example Spring Boot applications |
+| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Standalone Next.js frontend for Console APIs |
+| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Shopping mall demo app that generates realistic `LOG_EVENT` data |
 
 ### SDK Quick Start
 
 ```kotlin
 dependencies {
-    implementation("com.logfriends:log-friends-sdk:1.2.0")
+    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
 }
 ```
 
 ```bash
 export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8082/ingest
+export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
 java -Djdk.attach.allowAttachSelf=true -jar your-app.jar
 ```
 
@@ -385,7 +395,8 @@ Spring Boot App + log-friends-sdk
   -> HTTP JSON batch POST /ingest
   -> log-friends-console
   -> PostgreSQL / TimescaleDB
-  -> Dashboard / Log Catalog
+  -> Console REST API
+  -> log-friends-console-web
 ```
 
 第一阶段目标是减少运维组件：Spring Boot 应用直接向 Console 发送 HTTP JSON batch，用较少组件完成 Raw Event 存储和第一阶段统计流程。
@@ -410,18 +421,19 @@ LogSpec + Recent Sample + Mismatch + Field Request
 |---|---|
 | [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Captures events inside Spring Boot apps and sends them to Console `/ingest` |
 | [log-friends-console](https://github.com/log-freind/log-friends-console) | Ingest, storage, Agent management, Log Catalog, statistics |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Example Spring Boot applications |
+| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Standalone Next.js frontend for Console APIs |
+| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Shopping mall demo app that generates realistic `LOG_EVENT` data |
 
 ### SDK Quick Start
 
 ```kotlin
 dependencies {
-    implementation("com.logfriends:log-friends-sdk:1.2.0")
+    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
 }
 ```
 
 ```bash
 export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8082/ingest
+export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
 java -Djdk.attach.allowAttachSelf=true -jar your-app.jar
 ```
