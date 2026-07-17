@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-friends-config
+  namespace: log-friends
+data:
+  POSTGRES_HOST: timescaledb
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: logfriends_platform
+  LOGFRIENDS_INGEST_URL: http://log-friends-console:8080/ingest
+  LOGFRIENDS_WEB_ALLOWED_ORIGINS: http://192.168.0.38,http://192.168.0.38:30000,http://localhost:30000
+  CONSOLE_API_BASE_URL: http://192.168.0.38
