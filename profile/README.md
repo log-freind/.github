@@ -4,13 +4,20 @@
 
 # Log Friends
 
+[![SDK Release](https://img.shields.io/badge/SDK-v1.0.0-2ea44f.svg)](https://github.com/log-freind/log-friends-sdk/releases/tag/v1.0.0)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+
 **Languages:** [English](#english) | [한국어](#korean) | [日本語](#japanese) | [Deutsch](#deutsch) | [Português do Brasil](#portugues-do-brasil) | [中文](#中文)
 
 **Primary target stack:** Java / Kotlin, Spring Boot, PostgreSQL / TimescaleDB
 
+**Live demo:** [Console](http://choi1994.duckdns.org/) | [Example shop](http://choi1994.duckdns.org/examples/)
+
 ## English
 
-Log Friends is a lightweight event collection platform for Spring Boot applications. It is designed for teams running Java/Spring services who want to store Raw Events, inspect business `LOG_EVENT.eventName` flows, and build first-phase analytics without introducing a heavy observability or streaming stack.
+Log Friends structures business events scattered across backend services so backend and data/ML teams can work from the same event contract.
+
+Developers describe an event and its fields in the code path where it occurs. Log Friends captures the real payload, stores it, and shows the API context, field descriptions, recent sample, and mismatch state together. This removes repeated work where another team must infer meaning from fragmented string logs before analysis can begin.
 
 ```text
 Spring Boot App + log-friends-sdk
@@ -21,7 +28,7 @@ Spring Boot App + log-friends-sdk
   -> log-friends-console-web
 ```
 
-The first-phase goal is intentionally small: Spring Boot apps send HTTP JSON batches directly to the Console, and the Console stores Raw Events and builds first-phase statistics with fewer operational components. That makes Log Friends a practical fit for small teams and Java/Spring-heavy environments such as Korea, Japan, Germany, US enterprise systems, India, China, Eastern Europe, and Brazil.
+The first-phase goal is intentionally small: Spring Boot apps send bounded HTTP JSON batches directly to the Console, and the Console stores Raw Events and builds first-phase statistics with few operational components. Queue limits and a drop policy protect the target service from unbounded heap growth and Kubernetes `OOMKilled`.
 
 ### Product Idea
 
@@ -84,7 +91,7 @@ PostgreSQL / TimescaleDB
 
 ```kotlin
 dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
+    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
 }
 ```
 
@@ -117,7 +124,9 @@ If required settings are missing, the SDK disables capture/transport without fai
 
 ## Korean
 
-Log Friends는 Spring Boot 앱에서 발생하는 `LOG_EVENT`, `LOG`, `HTTP`, `JDBC`, `METHOD_TRACE` eventType을 SDK로 수집하고, Console에서 Raw Event와 eventName 흐름을 탐색할 수 있게 만드는 경량 수집 플랫폼입니다.
+Log Friends는 백엔드 서비스 안에 흩어진 비즈니스 이벤트를 구조화해 백엔드와 데이터/ML 영역이 같은 이벤트 계약을 보고 일할 수 있게 만드는 경량 수집 플랫폼입니다.
+
+개발자는 이벤트가 발생하는 코드 흐름에서 eventName과 필드 설명을 함께 남깁니다. Log Friends는 실제 payload를 수집·저장하고, 발생 API·필드 설명·최근 sample·mismatch를 한 화면에서 연결합니다. 데이터 담당자가 파편화된 문자열 로그의 의미를 다시 추론하고 정규화하는 반복 작업을 줄이는 것이 목적입니다.
 
 ```text
 Spring Boot App + log-friends-sdk
@@ -128,7 +137,7 @@ Spring Boot App + log-friends-sdk
   -> log-friends-console-web
 ```
 
-1차 목표는 운영 구성 요소를 줄이는 것입니다. Spring Boot 앱에서 Console로 직접 HTTP JSON batch를 보내고, 작은 팀도 Raw Event 저장과 기본 통계 흐름을 만들 수 있게 합니다.
+1차 목표는 운영 구성 요소를 줄이는 것입니다. Spring Boot 앱에서 Console로 직접 HTTP JSON batch를 보내고, 작은 팀도 Raw Event 저장과 기본 통계 흐름을 만들 수 있게 합니다. bounded queue와 drop policy로 SDK 메모리를 제한해 수집 도구가 메인 서비스를 `OOMKilled`로 종료시키지 않도록 합니다.
 
 ### 제품 방향
 
@@ -193,7 +202,7 @@ PostgreSQL / TimescaleDB
 
 ```kotlin
 dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
+    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
 }
 ```
 
@@ -266,7 +275,7 @@ LogSpec + Recent Sample + Mismatch + Field Request
 
 ```kotlin
 dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
+    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
 }
 ```
 
@@ -320,7 +329,7 @@ LogSpec + Recent Sample + Mismatch + Field Request
 
 ```kotlin
 dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
+    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
 }
 ```
 
@@ -374,7 +383,7 @@ LogSpec + Recent Sample + Mismatch + Field Request
 
 ```kotlin
 dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
+    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
 }
 ```
 
@@ -428,7 +437,7 @@ LogSpec + Recent Sample + Mismatch + Field Request
 
 ```kotlin
 dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:v0.3.0")
+    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
 }
 ```
 
