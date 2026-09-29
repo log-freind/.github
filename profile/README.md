@@ -1,448 +1,83 @@
 <p align="center">
-  <img src="./assets/log-friends-logo.svg" alt="Log Friends logo" width="720">
+  <img src="https://raw.githubusercontent.com/log-freind/.github/main/profile/assets/log-friends-logo.svg" alt="Log Friends logo" width="480">
 </p>
 
 # Log Friends
 
-[![SDK Release](https://img.shields.io/badge/SDK-v1.0.0-2ea44f.svg)](https://github.com/log-freind/log-friends-sdk/releases/tag/v1.0.0)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+**서비스 데이터의 의미를 코드에 남기고, 실제 발생한 이벤트와 함께 확인하는 경량 셀프호스팅 플랫폼입니다.**
 
-**Languages:** [English](#english) | [한국어](#korean) | [日本語](#japanese) | [Deutsch](#deutsch) | [Português do Brasil](#portugues-do-brasil) | [中文](#中文)
+백엔드 엔지니어는 이벤트 이름과 필드 설명을 코드에 정의합니다.
+데이터·ML 엔지니어는 Console에서 설명과 실제 데이터를 함께 살펴보고, 필요한 변경을 더 구체적으로 논의할 수 있습니다.
 
-**Primary target stack:** Java / Kotlin, Spring Boot, PostgreSQL / TimescaleDB
+> Connect event definitions in code with real payloads, so backend and data/ML teams can understand service data together.
 
-**Live demo:** [Console](http://choi1994.duckdns.org/) | [Example shop](http://choi1994.duckdns.org/examples/)
+## 어떤 문제를 해결하나요?
 
-## English
+서비스 데이터를 활용하기 전에는 어떤 데이터가 있는지, 각 필드가 무엇을 뜻하는지,
+언제 발생하는지를 확인해야 합니다. 코드와 문서, 로그가 떨어져 있으면 담당자에게 같은 질문을 반복하게 됩니다.
 
-Log Friends structures business events scattered across backend services so backend and data/ML teams can work from the same event contract.
+Log Friends는 **코드 설명 → 실제 이벤트 → 계약과의 차이**를 연결해 이 확인 작업을 줄이는 것을 목표로 합니다.
+데이터 분석이나 모델 학습 자체를 대신하는 도구는 아닙니다.
 
-Developers describe an event and its fields in the code path where it occurs. Log Friends captures the real payload, stores it, and shows the API context, field descriptions, recent sample, and mismatch state together. This removes repeated work where another team must infer meaning from fragmented string logs before analysis can begin.
+## 무엇을 볼 수 있나요?
 
-```text
-Spring Boot App + log-friends-sdk
-  -> HTTP JSON batch POST /ingest
-  -> log-friends-console
-  -> PostgreSQL / TimescaleDB
-  -> Console REST API
-  -> log-friends-console-web
-```
-
-The first-phase goal is intentionally small: Spring Boot apps send bounded HTTP JSON batches directly to the Console, and the Console stores Raw Events and builds first-phase statistics with few operational components. Queue limits and a drop policy protect the target service from unbounded heap growth and Kubernetes `OOMKilled`.
-
-### Product Idea
-
-Log Friends is not trying to replace Datadog or New Relic.
-
-The first users are backend engineers, data engineers, and data platform operators who need a simple way to see what eventName flows out of each Spring Boot app.
-
-The main differentiator is the Log Catalog. It connects intended LogSpec contracts with recent real samples, mismatch warnings, and field requests:
-
-```text
-LogSpec + Recent Sample + Mismatch + Field Request
-```
-
-Data engineers can inspect what each app emits before asking backend engineers for contract changes. Backend engineers still own LogSpec, eventName contracts, and code changes.
-
-### Architecture
-
-```text
-Target Spring Boot App
-  + log-friends-sdk
-      - ByteBuddy instrumentation
-      - bounded in-memory queue
-      - JSON batch transport
-      - masking before send
-        |
-        | POST /ingest
-        v
-log-friends-console
-  - Raw Event ingest
-  - Agent / Worker management
-  - Log Catalog API / Raw Events API
-  - scheduler-based statistics
-        |
-        v
-PostgreSQL / TimescaleDB
-```
-
-### Event Types
-
-| eventType | Stored in | Description |
-|---|---|---|
-| `LOG_EVENT` | `custom_events` | Business eventName captured from `@LogEvent` |
-| `LOG` | `logs` | Logback logs |
-| `HTTP` | `http_events` | HTTP request/response metadata |
-| `JDBC` | `jdbc_events` | JDBC execution metadata |
-| `METHOD_TRACE` | `method_traces` | Spring `@Service` method duration |
-
-`LOG_EVENT.eventName` is required and must be camelCase. Invalid `LOG_EVENT` values are not sent by the SDK; the target app logs a warning instead.
-
-### Repositories
-
-| Repository | Role |
+| 화면 | 확인할 내용 |
 |---|---|
-| [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Captures events inside Spring Boot apps and sends them to Console `/ingest` |
-| [log-friends-console](https://github.com/log-freind/log-friends-console) | Ingest, storage, Agent management, Log Catalog, statistics |
-| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Standalone Next.js frontend for Console APIs |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Shopping mall demo app that generates realistic `LOG_EVENT` data |
+| **Log Catalog** | 이벤트 설명, 필드 계약, 코드에서 발견한 힌트, 실제 샘플, 누락·추가 필드 |
+| **Raw Events** | 발생한 이벤트를 앱·기간·세션 등으로 조회하고 CSV로 내보내기 |
+| **Overview** | 같은 기간의 HTTP 트래픽, 지연, 이벤트 발생 횟수, 오류 |
+| **Frontend Tree** | 브라우저 이벤트에 기록된 페이지·컴포넌트 위치 |
 
-### SDK Quick Start
+Console은 AI 도구가 이벤트 계약과 샘플 등을 조회할 수 있는 **읽기 전용 MCP**도 제공합니다.
 
-```kotlin
-dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
-}
-```
-
-Required configuration:
-
-```bash
-export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
-```
-
-JVM attach option:
-
-```bash
-java -Djdk.attach.allowAttachSelf=true -jar your-app.jar
-```
-
-If required settings are missing, the SDK disables capture/transport without failing the target app.
-
-### First-Phase Policy
-
-- SDK transport is HTTP JSON `POST /ingest`.
-- `workerId` and `ingestUrl` are required.
-- SDK transport failures never fail the target app.
-- Queue full or transport failure drops the batch and logs periodic warnings.
-- SDK does not auto-register LogSpec.
-- Console owns Raw Event storage and statistics generation.
-- Console Web is separated into log-friends-console-web and consumes Console REST APIs.
-
----
-
-## Korean
-
-Log Friends는 백엔드 서비스 안에 흩어진 비즈니스 이벤트를 구조화해 백엔드와 데이터/ML 영역이 같은 이벤트 계약을 보고 일할 수 있게 만드는 경량 수집 플랫폼입니다.
-
-개발자는 이벤트가 발생하는 코드 흐름에서 eventName과 필드 설명을 함께 남깁니다. Log Friends는 실제 payload를 수집·저장하고, 발생 API·필드 설명·최근 sample·mismatch를 한 화면에서 연결합니다. 데이터 담당자가 파편화된 문자열 로그의 의미를 다시 추론하고 정규화하는 반복 작업을 줄이는 것이 목적입니다.
+## 어떻게 동작하나요?
 
 ```text
-Spring Boot App + log-friends-sdk
-  -> HTTP JSON batch POST /ingest
-  -> log-friends-console
-  -> PostgreSQL / TimescaleDB
-  -> Console REST API
-  -> log-friends-console-web
+Spring Boot 서비스 + Kotlin SDK
+Node.js / 브라우저 / JavaScript 모바일 앱 + TypeScript SDK
+                       │
+                       │ HTTP JSON batch
+                       ▼
+                    Console ── PostgreSQL / TimescaleDB
+                       │
+                       ├── Console Web
+                       └── 읽기 전용 MCP (선택)
 ```
 
-1차 목표는 운영 구성 요소를 줄이는 것입니다. Spring Boot 앱에서 Console로 직접 HTTP JSON batch를 보내고, 작은 팀도 Raw Event 저장과 기본 통계 흐름을 만들 수 있게 합니다. bounded queue와 drop policy로 SDK 메모리를 제한해 수집 도구가 메인 서비스를 `OOMKilled`로 종료시키지 않도록 합니다.
+- **Kotlin SDK**: ByteBuddy로 런타임 정보를 수집하고, `@LogEvent`와 `@LogField`로 이벤트 의미를 남깁니다.
+- **TypeScript SDK**: 명시적인 이벤트 호출이나 데코레이터로 데이터를 수집합니다. 브라우저 컴포넌트 위치는 직접 지정합니다.
+- **Console**: 이벤트 저장, 계약 관리, 샘플 조회와 필드 비교를 담당합니다.
 
-### 제품 방향
+별도 메시지 브로커 없이 SDK가 Console에 직접 전송하는 구조입니다.
 
-Log Friends는 Datadog이나 New Relic을 대체하려는 대형 Observability 제품이 아닙니다.
+## 처음 사용한다면
 
-1차 사용자는 제한된 리소스 안에서 앱별 eventName 흐름과 최근 payload 샘플을 확인하고 싶은 백엔드 엔지니어, 데이터 엔지니어, 데이터 플랫폼 운영자입니다.
+**Console → Examples → Console Web** 순서로 실행하면 수집부터 조회까지 확인할 수 있습니다.
+각 저장소 README에 준비 사항과 실행 명령이 있습니다.
 
-Log Friends는 국가별 사용량 순위를 주장하기보다, Java/Spring Boot 기반 엔터프라이즈 백엔드가 많은 환경을 주요 타깃으로 봅니다. 예를 들어 한국, 일본, 독일, 미국 엔터프라이즈, 인도, 중국, 동유럽, 브라질처럼 Spring Boot 서비스와 사내 운영 시스템이 많은 시장에서는, 무거운 Observability 스택 없이 앱별 eventName 흐름을 확인하려는 요구가 생길 수 있습니다.
+1. [Console](https://github.com/log-freind/log-friends-console#readme): PostgreSQL/TimescaleDB를 준비하고 백엔드를 실행합니다.
+2. [Examples](https://github.com/log-freind/log-friends-examples#readme): 쇼핑몰 예제를 실행하고 상품을 조회합니다.
+3. [Console Web](https://github.com/log-freind/log-friends-console-web#readme): Raw Events에서 `catalogProductsListed`를 찾고 Log Catalog에서 설명과 샘플을 확인합니다.
 
-핵심 차별점은 Log Catalog입니다.
+직접 만든 서비스에 연결하려면 아래에서 실행 환경에 맞는 SDK를 선택하세요.
+현재 Console은 **HTTP 요청당 최대 50건**을 받으므로 Kotlin SDK와 Examples의
+`LOGFRIENDS_BATCH_SIZE`를 **50 이하**로 지정해야 합니다.
 
-```text
-LogSpec + Recent Sample + Mismatch + Field Request
-```
+## 저장소 안내
 
-데이터 엔지니어는 Log Catalog에서 Recent Sample과 Mismatch를 확인하고 필요한 field를 요청할 수 있습니다. 백엔드 엔지니어는 LogSpec, eventName 계약, 코드 변경의 소유권을 유지합니다.
-
-### 아키텍처
-
-```text
-Target Spring Boot App
-  + log-friends-sdk
-      - ByteBuddy instrumentation
-      - bounded in-memory queue
-      - JSON batch transport
-      - masking before send
-        |
-        | POST /ingest
-        v
-log-friends-console
-  - Raw Event ingest
-  - Agent / Worker management
-  - Log Catalog API / Raw Events API
-  - scheduler-based statistics
-        |
-        v
-PostgreSQL / TimescaleDB
-```
-
-### Event Types
-
-| eventType | 저장 대상 | 설명 |
-|---|---|---|
-| `LOG_EVENT` | `custom_events` | `@LogEvent` 기반 비즈니스 eventName |
-| `LOG` | `logs` | Logback 로그 |
-| `HTTP` | `http_events` | HTTP 요청/응답 메타데이터 |
-| `JDBC` | `jdbc_events` | JDBC 실행 메타데이터 |
-| `METHOD_TRACE` | `method_traces` | Spring `@Service` 메서드 실행 시간 |
-
-`LOG_EVENT.eventName`은 camelCase 필수입니다. 유효하지 않은 `LOG_EVENT`는 SDK에서 전송하지 않고 대상 앱 로그에 warn을 남깁니다.
-
-### Repositories
-
-| Repository | Role |
+| 저장소 | 이런 경우에 사용하세요 |
 |---|---|
-| [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Spring Boot 앱 내부에서 이벤트를 캡처하고 Console `/ingest`로 전송 |
-| [log-friends-console](https://github.com/log-freind/log-friends-console) | 이벤트 수신, 저장, Agent 관리, Log Catalog, 통계 생성 |
-| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Console API를 사용하는 독립 Next.js 프론트엔드 |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | 쇼핑몰 흐름으로 실제 `LOG_EVENT` 데이터를 생성하는 예제 앱 |
-
-### SDK Quick Start
-
-```kotlin
-dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
-}
-```
-
-필수 설정:
-
-```bash
-export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
-```
-
-JVM attach 옵션:
-
-```bash
-java -Djdk.attach.allowAttachSelf=true -jar your-app.jar
-```
-
-설정이 없으면 SDK는 앱을 죽이지 않고 캡처/전송을 비활성화합니다.
-
-### 1차 정책
-
-- SDK transport는 HTTP JSON `POST /ingest`입니다.
-- `workerId`와 `ingestUrl`은 필수 설정입니다.
-- SDK 전송 실패는 대상 앱을 실패시키지 않습니다.
-- queue full 또는 전송 실패 시 batch는 drop하며, 주기적으로 warn을 남깁니다.
-- SDK는 LogSpec을 자동 등록하지 않습니다.
-- Console이 Raw Event 저장과 통계 생성을 담당합니다.
-- Console Web은 log-friends-console-web으로 분리되어 Console REST API를 사용합니다.
-
----
-
-## Japanese
-
-Log Friends は、Spring Boot アプリケーションで発生する `LOG_EVENT`, `LOG`, `HTTP`, `JDBC`, `METHOD_TRACE` eventType を SDK で収集し、Console で Raw Event と eventName の流れを確認できる軽量な収集プラットフォームです。
-
-```text
-Spring Boot App + log-friends-sdk
-  -> HTTP JSON batch POST /ingest
-  -> log-friends-console
-  -> PostgreSQL / TimescaleDB
-  -> Console REST API
-  -> log-friends-console-web
-```
-
-第1フェーズの目標は、運用コンポーネントを増やさないことです。Spring Boot アプリから Console に直接 HTTP JSON batch を送り、Raw Event 保存と基本統計の流れを小さく始めます。
-
-### Product Direction
-
-Log Friends は Datadog や New Relic を置き換える大型 Observability 製品ではありません。
-
-主な対象は、限られたリソースの中でアプリごとの eventName の流れと最近の payload サンプルを確認したいバックエンドエンジニア、データエンジニア、データ基盤運用者です。
-
-国別の利用ランキングを主張するのではなく、Java/Spring Boot ベースのエンタープライズバックエンドが多い環境を主な対象としています。日本、韓国、ドイツ、米国エンタープライズ、インド、中国、東欧、ブラジルのような市場では、重い Observability スタックなしで app ごとの eventName を確認したいニーズが生まれやすいです。
-
-Log Catalog は次の要素をまとめて扱います。
-
-```text
-LogSpec + Recent Sample + Mismatch + Field Request
-```
-
-### Repositories
-
-| Repository | Role |
-|---|---|
-| [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Spring Boot アプリ内でイベントをキャプチャし、Console `/ingest` に送信 |
-| [log-friends-console](https://github.com/log-freind/log-friends-console) | ingest, storage, Agent management, Log Catalog, statistics |
-| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Standalone Next.js frontend for Console APIs |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | 実際のショッピングモールフローで `LOG_EVENT` を生成するデモアプリ |
-
-### SDK Quick Start
-
-```kotlin
-dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
-}
-```
-
-```bash
-export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
-java -Djdk.attach.allowAttachSelf=true -jar your-app.jar
-```
-
----
-
-## Deutsch
-
-Log Friends ist eine leichtgewichtige Event-Collection-Plattform fuer Spring-Boot-Anwendungen. Das SDK sammelt `LOG_EVENT`, `LOG`, `HTTP`, `JDBC` und `METHOD_TRACE` eventTypes und macht Raw Events sowie eventName-Fluesse in der Console sichtbar.
-
-```text
-Spring Boot App + log-friends-sdk
-  -> HTTP JSON batch POST /ingest
-  -> log-friends-console
-  -> PostgreSQL / TimescaleDB
-  -> Console REST API
-  -> log-friends-console-web
-```
-
-Das Ziel der ersten Phase ist eine kleine Betriebsflaeche: Spring-Boot-Apps senden HTTP JSON batches direkt an die Console, damit Raw Events und erste Statistiken mit wenigen Betriebsbausteinen verfuegbar sind.
-
-### Product Direction
-
-Log Friends ersetzt keine grossen Observability-Plattformen wie Datadog oder New Relic.
-
-Die ersten Nutzer sind Backend Engineers, Data Engineers und Data Platform Operators, die mit begrenzten Ressourcen eventName-Fluesse und aktuelle payload samples pro App sehen wollen.
-
-Log Friends ist besonders passend fuer Enterprise-Java/Spring-Umgebungen, wie sie haeufig in Deutschland, Korea, Japan, US-Enterprise-Systemen, Indien, China, Osteuropa und Brasilien vorkommen. Das ist keine Laender-Rangliste, sondern eine Zielumgebung: viele Spring-Boot-Services, interne Systeme und Bedarf an leichtem Self-Hosting.
-
-Der Log Catalog verbindet:
-
-```text
-LogSpec + Recent Sample + Mismatch + Field Request
-```
-
-### Repositories
-
-| Repository | Role |
-|---|---|
-| [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Captures events inside Spring Boot apps and sends them to Console `/ingest` |
-| [log-friends-console](https://github.com/log-freind/log-friends-console) | Ingest, storage, Agent management, Log Catalog, statistics |
-| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Standalone Next.js frontend for Console APIs |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Shopping mall demo app that generates realistic `LOG_EVENT` data |
-
-### SDK Quick Start
-
-```kotlin
-dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
-}
-```
-
-```bash
-export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
-java -Djdk.attach.allowAttachSelf=true -jar your-app.jar
-```
-
----
-
-## Portugues do Brasil
-
-Log Friends e uma plataforma leve de coleta para aplicacoes Spring Boot. O SDK coleta os eventTypes `LOG_EVENT`, `LOG`, `HTTP`, `JDBC` e `METHOD_TRACE`, envia batches JSON para a Console e permite explorar Raw Events e fluxos de eventName.
-
-```text
-Spring Boot App + log-friends-sdk
-  -> HTTP JSON batch POST /ingest
-  -> log-friends-console
-  -> PostgreSQL / TimescaleDB
-  -> Console REST API
-  -> log-friends-console-web
-```
-
-O objetivo da primeira fase e reduzir componentes operacionais: a aplicacao Spring Boot envia HTTP JSON batches diretamente para a Console para armazenar Raw Events e iniciar estatisticas com poucos componentes.
-
-### Product Direction
-
-Log Friends nao tenta substituir plataformas grandes de Observability como Datadog ou New Relic.
-
-Os primeiros usuarios sao backend engineers, data engineers e operadores de plataforma de dados que precisam ver fluxos de eventName e samples recentes de payload com poucos recursos.
-
-Log Friends e pensado para ambientes enterprise Java/Spring Boot, comuns em mercados como Brasil, Coreia, Japao, Alemanha, sistemas enterprise dos EUA, India, China e Europa Oriental. Isso nao e um ranking por pais; e uma descricao do tipo de ambiente onde muitos servicos Spring Boot e sistemas internos precisam de coleta simples e self-hosted.
-
-O Log Catalog conecta:
-
-```text
-LogSpec + Recent Sample + Mismatch + Field Request
-```
-
-### Repositories
-
-| Repository | Role |
-|---|---|
-| [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Captures events inside Spring Boot apps and sends them to Console `/ingest` |
-| [log-friends-console](https://github.com/log-freind/log-friends-console) | Ingest, storage, Agent management, Log Catalog, statistics |
-| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Standalone Next.js frontend for Console APIs |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Shopping mall demo app that generates realistic `LOG_EVENT` data |
-
-### SDK Quick Start
-
-```kotlin
-dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
-}
-```
-
-```bash
-export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
-java -Djdk.attach.allowAttachSelf=true -jar your-app.jar
-```
-
----
-
-## 中文
-
-Log Friends 是面向 Spring Boot 应用的轻量级 event collection 平台。SDK 采集 `LOG_EVENT`, `LOG`, `HTTP`, `JDBC`, `METHOD_TRACE` eventType，通过 HTTP JSON batch 发送到 Console，并支持查看 Raw Event 与 eventName 流向。
-
-```text
-Spring Boot App + log-friends-sdk
-  -> HTTP JSON batch POST /ingest
-  -> log-friends-console
-  -> PostgreSQL / TimescaleDB
-  -> Console REST API
-  -> log-friends-console-web
-```
-
-第一阶段目标是减少运维组件：Spring Boot 应用直接向 Console 发送 HTTP JSON batch，用较少组件完成 Raw Event 存储和第一阶段统计流程。
-
-### Product Direction
-
-Log Friends 不是 Datadog 或 New Relic 这类大型 Observability 平台的替代品。
-
-第一批用户是后端工程师、数据工程师和数据平台运维人员。他们希望在资源有限的情况下查看每个应用的 eventName 流向和最近的 payload sample。
-
-Log Friends 更适合 Java/Spring Boot 企业后端环境，例如中国、韩国、日本、德国、美国企业系统、印度、东欧和巴西等市场。这里不是国家排名，而是指 Spring Boot 服务和内部系统较多、同时需要轻量自托管采集路径的环境。
-
-Log Catalog 连接以下信息：
-
-```text
-LogSpec + Recent Sample + Mismatch + Field Request
-```
-
-### Repositories
-
-| Repository | Role |
-|---|---|
-| [log-friends-sdk](https://github.com/log-freind/log-friends-sdk) | Captures events inside Spring Boot apps and sends them to Console `/ingest` |
-| [log-friends-console](https://github.com/log-freind/log-friends-console) | Ingest, storage, Agent management, Log Catalog, statistics |
-| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | Standalone Next.js frontend for Console APIs |
-| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | Shopping mall demo app that generates realistic `LOG_EVENT` data |
-
-### SDK Quick Start
-
-```kotlin
-dependencies {
-    implementation("com.github.log-freind:log-friends-sdk:1.0.0")
-}
-```
-
-```bash
-export LOGFRIENDS_WORKER_ID=order-api-local-1
-export LOGFRIENDS_INGEST_URL=http://localhost:8080/ingest
-java -Djdk.attach.allowAttachSelf=true -jar your-app.jar
-```
+| [log-friends-kt-sdk](https://github.com/log-freind/log-friends-kt-sdk) | Spring Boot 서비스에 Kotlin/JVM SDK 연결 |
+| [log-friends-ts-sdk](https://github.com/log-freind/log-friends-ts-sdk) | Node.js·브라우저·JavaScript 모바일 앱에 SDK 연결 |
+| [log-friends-console](https://github.com/log-freind/log-friends-console) | 이벤트 저장과 조회 API, 계약 관리, MCP 실행 |
+| [log-friends-console-web](https://github.com/log-freind/log-friends-console-web) | 웹 화면에서 이벤트 확인 |
+| [log-friends-examples](https://github.com/log-freind/log-friends-examples) | 쇼핑몰 예제로 전체 흐름 체험 |
+| [log-friends-infra](https://github.com/log-freind/log-friends-infra) | NAS/MicroK8s 운영 환경의 배포 설정 확인 (접근 권한 필요) |
+
+## 사용 전에 알아둘 점
+
+- **코드 힌트와 확정 계약은 다릅니다.** SDK가 발견한 정의는 힌트로 보고되며, 확정 계약인 LogSpec은 Console API에서 관리합니다. 현재 mismatch는 필드 누락·추가 비교이며 타입·중첩 구조 전체 검증은 아닙니다.
+- **서비스 보호를 우선하는 수집 방식입니다.** 큐 제한과 drop 정책으로 무한 적재를 제한하지만, 데이터 유실이나 OOM 방지를 완전히 보장하지 않습니다. 결제·주문 원장을 대체하지 않습니다.
+- **내부망 사용을 전제로 검토하세요.** 현재 애플리케이션 인증·권한 관리가 없으며 CORS나 MCP Host/Origin 검사는 인증을 대신하지 않습니다. 민감정보는 수집 전에 제거해야 합니다.
+
+설치 버전, 설정 기본값, 지원 범위는 각 저장소 README를 기준으로 확인하세요.
